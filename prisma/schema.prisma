@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
     provider = "postgresql"
+
 }
 
 model Book {
@@ -12,6 +13,8 @@ model Book {
     author    String
     quantity  Int      @default(0)
     createdAt DateTime @default(now())
+
+     borrowings Borrowing[]
 }
 
 model Employee {
@@ -26,4 +29,15 @@ enum Role {
     GUEST
     LIBRARIAN
     ADMIN
+}
+
+model Borrowing {
+  id           Int       @id @default(autoincrement())
+  borrowerName String    
+  bookId       Int       
+  borrowedAt   DateTime  @default(now()) 
+  returnedAt   DateTime? 
+
+  // Tạo liên kết với bảng Book (Để biết mượn cuốn sách nào)
+  book         Book      @relation(fields: [bookId], references: [id])
 }
