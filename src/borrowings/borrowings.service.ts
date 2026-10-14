@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { CreateBorrowingDto } from './dto/create-borrowing.dto';
-
+import { FilterBorrowingDto } from './dto/filter-borrowing.dto';
 @Injectable()
 export class BorrowingsService {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -69,5 +69,41 @@ export class BorrowingsService {
 
       return updatedBorrowing;
     });
+  }
+
+  // 1. LẤY DANH SÁCH (CÓ PHÂN TRANG VÀ TÌM KIẾM)
+  async findAll(filter: FilterBorrowingDto) {
+    const { search, page = 1, limit = 10 } = filter;
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: any = {};
+
+    if (search) {
+      where.borrowerCode = { contains: search, mode: 'insensitive' };
+    }
+
+    const [data, total] = await Promise.all([
+      this.databaseService.borrowing.findMany({
+        where,
+        skip,
+        take: limitNum,
+        include: { book: true },
+        orderBy: { borrowedAt: 'desc' },
+      }),
+      this.databaseService.borrowing.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    };
   }
 }
